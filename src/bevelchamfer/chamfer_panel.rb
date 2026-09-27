@@ -47,25 +47,40 @@ module BACommunity
         @dialog.set_file(HTML_FILE)
         attach(@dialog)
         # Закрыли окно — превью во вьюпорте больше нечем управлять, убираем.
-        @dialog.set_on_closed { ChamferPreview.stop }
+        dialog = @dialog
+        @dialog.set_can_close { @closing_dialog = dialog; true }
+        @dialog.set_on_closed do
+          next unless @dialog.equal?(dialog)
+          preview = ChamferPreview.instance_variable_get(:@current)
+          @dialog = nil
+          @closing_dialog = nil
+          # Keep the Ruby wrapper alive until native Qt/CEF close processing
+          # finishes. Never send JS or change the viewport tool in this callback.
+          @retired_dialogs ||= []
+          @retired_dialogs << dialog
+          UI.start_timer(0.1, false) do
+            ChamferPreview.stop if @dialog.nil? && ChamferPreview.instance_variable_get(:@current).equal?(preview)
+            @retired_dialogs.delete(dialog)
+          end
+        end
         @dialog.show
         @dialog
       end
 
       def self.attach(dialog)
-        dialog.add_action_callback('ready') { |_ctx| push }
-        dialog.add_action_callback('close') { |_ctx| dialog.close }
-        dialog.add_action_callback('refresh') { |_ctx| push }
-        dialog.add_action_callback('bake') { |_ctx| run_bake }
-        dialog.add_action_callback('stop') { |_ctx| ChamferPreview.stop; preview_state(false) }
-        dialog.add_action_callback('preview') do |_ctx, size, segments, mode|
+        callback(dialog, 'ready') { |_ctx| push }
+        callback(dialog, 'close') { |_ctx| dialog.close }
+        callback(dialog, 'refresh') { |_ctx| push }
+        callback(dialog, 'bake') { |_ctx| run_bake }
+        callback(dialog, 'stop') { |_ctx| ChamferPreview.stop; preview_state(false) }
+        callback(dialog, 'preview') do |_ctx, size, segments, mode|
           run_preview(size.to_f, segments.to_i, mode.to_s.to_sym)
         end
         # Живое превью со слайдеров: то же самое, но без отчёта на каждый тик.
-        dialog.add_action_callback('live') do |_ctx, size, segments, mode|
+        callback(dialog, 'live') do |_ctx, size, segments, mode|
           run_preview(size.to_f, segments.to_i, mode.to_s.to_sym, quiet: true)
         end
-        dialog.add_action_callback('apply') do |_ctx, size, segments, mode, parametric|
+        callback(dialog, 'apply') do |_ctx, size, segments, mode, parametric|
           run_apply(size.to_f, segments.to_i, mode.to_s.to_sym, parametric: parametric == true)
         end
       end
@@ -123,6 +138,7 @@ module BACommunity
       end
 
       def self.push
+        return unless @dialog && !@closing_dialog && @dialog.visible?
         edges = selected_edges
         @dialog&.execute_script("app.state(#{JSON.generate(
           edges: edges.length,
@@ -135,11 +151,22 @@ module BACommunity
       end
 
       def self.preview_state(active)
-        @dialog&.execute_script("app.preview(#{active ? 'true' : 'false'})")
+        script("app.preview(#{active ? 'true' : 'false'})")
       end
 
       def self.say(text, kind = 'info')
-        @dialog&.execute_script("app.say(#{JSON.generate(text)}, #{JSON.generate(kind)})")
+        script("app.say(#{JSON.generate(text)}, #{JSON.generate(kind)})")
+      end
+
+      def self.callback(dialog, name, &action)
+        dialog.add_action_callback(name) do |context, *args|
+          next unless @dialog.equal?(dialog) && !@closing_dialog && dialog.visible?
+          action.call(context, *args)
+        end
+      end
+
+      def self.script(code)
+        @dialog.execute_script(code) if @dialog && !@closing_dialog && @dialog.visible?
       end
 
       def self.unit_name
