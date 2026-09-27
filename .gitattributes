@@ -1,0 +1,9 @@
+* text=auto
+*.rb text eol=lf
+*.html text eol=lf
+*.ps1 text eol=crlf
+*.png binary
+*.md text eol=lf
+*.css text eol=lf
+LICENSE text eol=lf
+AUTHORS text eol=lf

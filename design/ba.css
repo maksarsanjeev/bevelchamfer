@@ -1,0 +1,113 @@
+/* Дизайн-код плагинов B&A community — общий стиль HtmlDialog.
+   Подключение: <link rel="stylesheet" href="ba.css"> (файл рядом с html)
+   Описание и правила — design/designcode.md */
+
+/* ---------- База ---------- */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font: 13px/1.45 "Segoe UI", system-ui, sans-serif;
+  color: #1c1c1c; background: #f5f5f4;
+  display: flex; flex-direction: column; height: 100vh;
+}
+
+/* ---------- Каркас окна: шапка → статус → контент → футер ---------- */
+header {
+  padding: 10px 14px; background: #fff; border-bottom: 1px solid #ddd;
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap; position: relative;
+}
+header .spacer { flex: 1; }
+#status { padding: 6px 14px; color: #666; }
+#wrap { flex: 1; overflow: auto; padding: 0 14px 14px; }
+footer {
+  padding: 7px 14px; background: #fff; border-top: 1px solid #ddd;
+  color: #888; font-size: 11px;
+}
+
+/* ---------- Кнопки, вкладки, поля ---------- */
+button {
+  font: inherit; padding: 6px 12px; border: 1px solid #bbb; border-radius: 6px;
+  background: #fff; cursor: pointer;
+}
+button:hover { background: #f0f0ef; }
+button.primary { background: #2b6cb0; border-color: #2b6cb0; color: #fff; }
+button.primary:hover { background: #245a94; }
+button.on { background: #ececea; }
+button:disabled { opacity: .4; cursor: default; }
+.tab.on { background: #2b6cb0; border-color: #2b6cb0; color: #fff; }
+input[type="search"], input[type="text"], input[type="number"], select {
+  font: inherit; padding: 6px 10px; border: 1px solid #bbb; border-radius: 6px; background: #fff;
+}
+label.opt { display: flex; align-items: center; gap: 5px; user-select: none; }
+
+/* ---------- Таблица данных ---------- */
+table { border-collapse: collapse; width: 100%; background: #fff; }
+th, td { padding: 6px 8px; border-bottom: 1px solid #eee; text-align: left; white-space: nowrap; }
+th { position: sticky; top: 0; background: #fafaf9; border-bottom: 1px solid #ddd; z-index: 1; }
+td.ellipsis { max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
+.code { font-weight: 600; }
+.muted { color: #888; font-size: 11px; }
+.dim { color: #888; }
+
+/* Двухуровневая шапка (группа → столбец) */
+thead tr.grp th {
+  top: 0; height: 24px; padding: 0 8px; font-size: 11px; font-weight: 600;
+  color: #888; text-transform: uppercase; letter-spacing: .03em; border-bottom: 1px solid #eee;
+}
+thead tr.grp th + th { border-left: 1px solid #e4e4e2; }
+thead tr.col th { top: 24px; border-bottom: 1px solid #ddd; }
+td.b, th.b { border-left: 1px solid #f0f0ee; }
+
+/* ---------- Цвет как данные ---------- */
+.sw {
+  display: inline-block; width: 22px; height: 22px; border-radius: 4px;
+  border: 1px solid rgba(0,0,0,.2); vertical-align: middle;
+}
+.cell { width: 27px; height: 27px; border-radius: 5px; border: 1px solid rgba(0,0,0,.15); cursor: pointer; }
+.cell:hover { outline: 2px solid #2b6cb0; outline-offset: 1px; }
+.cell.sel { outline: 3px solid #1c1c1c; outline-offset: 1px; }
+.grid { display: flex; flex-wrap: wrap; gap: 4px; }
+.group h3 { font-size: 12px; color: #666; margin: 12px 0 6px; font-weight: 600; }
+
+/* ---------- Бейджи-таблетки: цветные — статус, серый — свойство ---------- */
+.pill { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 11px; color: #fff; }
+.pill.ok      { background: #2f855a; }
+.pill.good    { background: #68a63e; }
+.pill.warn    { background: #dd8a20; }
+.pill.bad     { background: #c53030; }
+.pill.neutral { background: #ececea; color: #777; border: 1px solid #ddd; }
+
+/* ---------- Попап-панель (настройки, столбцы) ---------- */
+.popover {
+  position: absolute; top: 100%; right: 14px; z-index: 5;
+  background: #fff; border: 1px solid #ccc; border-radius: 8px;
+  padding: 10px 12px; min-width: 260px; display: none;
+}
+.popover.open { display: block; }
+.popover .g { margin-bottom: 8px; }
+.popover .g-head { display: flex; align-items: center; gap: 6px; font-weight: 600; padding: 3px 0; }
+.popover .c { display: flex; align-items: center; gap: 6px; padding: 2px 0 2px 22px; }
+.popover .c.off, .popover .g.off .c { color: #999; }
+.popover .mv { margin-left: auto; display: flex; gap: 2px; }
+.popover .mv button { padding: 0 6px; line-height: 18px; font-size: 11px; border-radius: 4px; }
+.popover .mv button:disabled { opacity: .3; cursor: default; }
+.popover .foot { display: flex; gap: 8px; margin-top: 6px; padding-top: 8px; border-top: 1px solid #eee; }
+.popover .foot .hint { color: #888; font-size: 11px; flex: 1; }
+
+/* ---------- Боковая панель (карточка выбранного) ---------- */
+#side {
+  width: 250px; background: #fff; border-left: 1px solid #ddd;
+  padding: 14px; display: flex; flex-direction: column; gap: 10px;
+}
+#side .bigsw { width: 100%; height: 120px; border-radius: 8px; border: 1px solid rgba(0,0,0,.2); }
+#side .title { font-size: 16px; font-weight: 700; }
+#side .sub { color: #555; min-height: 18px; }
+#side .vals { color: #888; font-size: 12px; white-space: pre-line; }
+#side button { padding: 8px 12px; }
+
+/* ---------- Тост — единственная анимация ---------- */
+#toast {
+  position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+  background: #1c1c1c; color: #fff; padding: 8px 16px; border-radius: 8px;
+  opacity: 0; transition: opacity .25s; pointer-events: none; text-align: center;
+}
+#toast.on { opacity: .92; }

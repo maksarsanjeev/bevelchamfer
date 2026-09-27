@@ -1,0 +1,7 @@
+build/
+*.rbz
+*.zip
+*.skp
+*.skb
+bevelchamfer.md
+__pycache__/
