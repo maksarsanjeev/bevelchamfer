@@ -13,7 +13,7 @@ module BACommunity
           @size = values['size'] * LivePanel.world_scale
           @segments = values['segments']
         end
-        @input = Sketchup::InputPoint.new; @lines = []
+        @input = Sketchup::InputPoint.new; @lines = []; @reference_point = nil
       end
       def activate
         model = Sketchup.active_model
@@ -67,15 +67,43 @@ module BACommunity
           @transform = Geom::Transformation.new
           objects.each { |o| @transform *= o.transformation }
         end
+        if (@flags.to_i & ALT_MODIFIER_MASK) != 0 && @input.edge && picked.include?(@input.edge)
+          picked = connected_path(@input.edge)
+        end
         picked
+      end
+      # Follow a unique edge, or an unmistakably tangent continuation at a
+      # branch. A sharp or ambiguous junction ends the path.
+      def connected_path(seed)
+        path = [seed]
+        seed.vertices.each do |start|
+          vertex = start; previous = seed
+          loop do
+            choices = vertex.edges.select { |e| e != previous && eligible?(e) && e.parent == seed.parent }
+            break if choices.empty?
+            if choices.length == 1
+              following = choices.first
+            else
+              direction = vertex.position - previous.other_vertex(vertex).position
+              ranked = choices.map do |candidate|
+                forward = candidate.other_vertex(vertex).position - vertex.position
+                [candidate, direction.dot(forward) / (direction.length * forward.length)]
+              end.sort_by { |_, score| -score }
+              break if ranked[0][1] < Math.cos(45.degrees) || ranked[0][1] - ranked[1][1] < 0.15
+              following = ranked[0][0]
+            end
+            break if path.include?(following)
+            path << following
+            vertex = following.other_vertex(vertex); previous = following
+          end
+        end
+        path
       end
       def onMouseMove(flags, x, y, view)
         @flags = flags; @hover = probe(x, y, view)
         if @phase == :offset && @input.valid?
-          edge = @reference_edge
           point = @input.position
-          line = [edge.start.position.transform(@transform), edge.end.position.transform(@transform) - edge.start.position.transform(@transform)]
-          @size = point.distance(point.project_to_line(line)).to_f
+          @size = point.distance(point.project_to_line(reference_line)).to_f
           update_preview
         end
         status; view.invalidate
@@ -90,20 +118,23 @@ module BACommunity
                  end
       end
       def onLButtonDown(flags, x, y, view)
+        @flags = flags
         candidates = probe(x, y, view)
         if @live_object
           if @phase == :offset
             apply_current
           elsif !candidates.empty?
             @reference_edge = candidates.first
+            @reference_point = @input.position.project_to_line(reference_line) if @input.valid?
             @phase = :offset
           end
         elsif @phase == :offset
           apply_current
-        elsif @edges.empty? || (flags & (COPY_MODIFIER_MASK | CONSTRAIN_MODIFIER_MASK)) != 0
-          @last = nil; choose(candidates, flags)
+        elsif @edges.empty? || (flags & (COPY_MODIFIER_MASK | CONSTRAIN_MODIFIER_MASK | ALT_MODIFIER_MASK)) != 0
+          @last = nil; choose(candidates, flags); update_preview
         elsif @input.valid?
           @reference_edge = @edges.min_by { |e| @input.position.distance_to_line([e.start.position.transform(@transform), e.line[1].transform(@transform)]) }
+          @reference_point = @input.position.project_to_line(reference_line)
           @phase = :offset; update_preview
         end
         status; view.invalidate
@@ -124,9 +155,13 @@ module BACommunity
         @size / scales.first
       end
       def update_preview
-        return if @size <= 0
+        if @size <= 0
+          @lines = []; @error = nil; return
+        end
         targets = @live_object ? LiveBevel.eligible(LiveBevel.parts(@live_object).first.entities) : @edges
-        return if targets.empty?
+        if targets.empty?
+          @lines = []; @error = nil; return
+        end
         mode = @live_object ? LiveBevel.data(@live_object)['mode'].to_sym : :offset
         @lines = Chamfer.preview_lines(Chamfer.plan(targets, local_size, @segments, mode))
         @error = nil
@@ -178,7 +213,7 @@ module BACommunity
         @last = {owner: owner, source: source, keys: keys, entities: affected, signature: Modifier.signature(owner)}
         Sketchup.write_default('BACommunity_BevelTool', 'size', @size)
         Sketchup.write_default('BACommunity_BevelTool', 'segments', @segments)
-        @edges = []; @hover = []; @lines = []; @phase = :selection
+        @edges = []; @hover = []; @lines = []; @reference_point = nil; @phase = :selection
         status
       end
       def geometry_owner(entities)
@@ -203,10 +238,26 @@ module BACommunity
         report(e); true
       end
       def onUserText(text, view)
-        parsed = Sketchup.parse_length(text)
-        raise Chamfer::Error, 'Введите положительный размер, например 20mm.' unless parsed && parsed.to_f > 0
-        @size = parsed.to_f
-        apply_current(@last && @phase == :selection)
+        value = text.strip
+        if @edges.empty? && @phase == :selection && value.match?(/\A\d+\z/)
+          count = value.to_i
+          raise Chamfer::Error, 'Сегментов должно быть от 1 до 24.' unless count.between?(1, 24)
+          @segments = count
+          @last ? apply_current(true) : update_preview
+        else
+          parts = value.split(/\s*;\s*|,\s+/)
+          raise Chamfer::Error, 'Введите размер и, при необходимости, число сегментов.' unless parts.length.between?(1, 2)
+          parsed = Sketchup.parse_length(parts.first)
+          raise Chamfer::Error, 'Введите положительный размер, например 20mm.' unless parsed && parsed.to_f > 0
+          if parts.length == 2
+            count = Integer(parts.last, exception: false)
+            raise Chamfer::Error, 'Сегментов должно быть от 1 до 24.' unless count && count.between?(1, 24)
+            @segments = count
+          end
+          @size = parsed.to_f
+          apply_current(@last && @phase == :selection)
+        end
+        status
         view.invalidate
       rescue StandardError => e
         report(e)
@@ -214,16 +265,37 @@ module BACommunity
       def enableVCB?; true; end
       def onCancel(reason, view)
         if @phase == :offset
-          @phase = :selection; @lines = []
+          @phase = :selection; @reference_point = nil; update_preview
         else
-          @edges = []; @last = nil; @context = nil; @lines = []
+          @edges = []; @last = nil; @context = nil; @reference_point = nil; @lines = []
         end
+        @error = nil
         status; view.invalidate
       end
       def status
-        text = @phase == :offset ? 'Укажите размер мышью или введите число. Esc — вернуться к выбору.' : 'Выберите ребро, грань или вершину; Ctrl — добавить, Ctrl+Shift — исключить. Затем укажите опорную точку.'
+        text = @phase == :offset ? 'Укажите размер мышью или введите число. Esc — вернуться к выбору.' : 'Выберите ребро, грань или вершину; Alt — цепочка, Ctrl — добавить, Ctrl+Shift — исключить. Затем укажите опорную точку.'
         Sketchup.set_status_text(@error || "#{text} ↑/↓: #{@segments} сегм.")
-        Sketchup.set_status_text('Размер', SB_VCB_LABEL); Sketchup.set_status_text(@size.to_l.to_s, SB_VCB_VALUE)
+        if @phase == :selection && @edges.empty?
+          Sketchup.set_status_text('Сегменты', SB_VCB_LABEL)
+          Sketchup.set_status_text(@segments.to_s, SB_VCB_VALUE)
+        else
+          Sketchup.set_status_text('Отступ, сегменты', SB_VCB_LABEL)
+          Sketchup.set_status_text("#{@size.to_l}, #{@segments}", SB_VCB_VALUE)
+        end
+      end
+      def reference_line
+        start = @reference_edge.start.position.transform(@transform)
+        [start, @reference_edge.end.position.transform(@transform) - start]
+      end
+      def onSetCursor
+        cursor = self.class.cursor_id
+        cursor ? UI.set_cursor(cursor) : false
+      end
+      def self.cursor_id
+        return @cursor_id if defined?(@cursor_id)
+        @cursor_id = UI.create_cursor(File.join(__dir__, 'icons', 'interactive.svg'), 2, 2)
+      rescue StandardError
+        @cursor_id = nil
       end
       def draw(view)
         view.line_width = 3
@@ -237,11 +309,19 @@ module BACommunity
         view.draw(GL_LINES, points) unless points.empty?
         view.drawing_color = Sketchup::Color.new(40, 120, 230); view.line_width = 1
         @lines.each { |line| view.draw(GL_LINE_STRIP, line.map { |p| p.transform(@transform) }) }
+        if @phase == :offset && @reference_point
+          view.drawing_color = Sketchup::Color.new(220, 50, 50)
+          if @input.valid?
+            view.line_stipple = '.'; view.draw(GL_LINES, [@reference_point, @input.position]); view.line_stipple = ''
+          end
+          view.draw_points([@reference_point], 9, 3, Sketchup::Color.new(220, 50, 50))
+        end
         @input.draw(view) if @input.valid?
       end
       def getExtents
         box = Geom::BoundingBox.new
         @lines.each { |line| line.each { |p| box.add(p.transform(@transform)) } }
+        box.add(@reference_point) if @reference_point
         box
       end
       def deactivate(view); view.invalidate; end

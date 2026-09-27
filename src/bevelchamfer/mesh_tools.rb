@@ -27,7 +27,23 @@ module BACommunity
         items.flat_map { |e| e.is_a?(Sketchup::Edge) ? [e] : (e.is_a?(Sketchup::Face) ? e.edges : []) }.uniq
       end
       def border?(edge)
-        edge.faces.length == 2 && edge.faces.count { |f| f.get_attribute('BACommunity_BevelSurface', 'generated', false) } == 1
+        return false unless edge.faces.length == 2
+        marked = edge.faces.count { |f| f.get_attribute('BACommunity_BevelSurface', 'generated', false) }
+        return marked == 1 if marked > 0
+        # Imported bevels have no extension metadata. A border separates a
+        # run of gradually changing facet normals from a locally flat face.
+        a, b = edge.faces
+        return true if curved_side?(a, edge) != curved_side?(b, edge)
+        smaller, larger = [a, b].sort_by(&:area)
+        larger.area >= smaller.area * 4 && curved_side?(smaller, edge)
+      end
+      def curved_side?(face, shared)
+        face.edges.any? do |neighbor_edge|
+          next false if neighbor_edge == shared || neighbor_edge.faces.length != 2
+          other = neighbor_edge.faces.find { |f| f != face }
+          angle = face.normal.angle_between(other.normal)
+          angle > 1.0e-4 && angle < 45.degrees
+        end
       end
       def soften(edges, values = settings)
         count = 0

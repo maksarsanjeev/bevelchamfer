@@ -10,7 +10,7 @@ $files = @(
  'live_edit_context', 'live_edit_context_pushpull', 'live_edit_context_check',
  'video_ui', 'video_ui_check', 'video_ui_finish', 'video_ui_cleanup',
  'live_mouse', 'preferences_ui', 'preferences_ui_check',
- 'video_recheck', 'video_recheck_ui', 'video_recheck_finish'
+ 'video_recheck', 'video_recheck_ui', 'video_recheck_finish', 'video_completion'
 )
 try {
     foreach ($file in $files) {
