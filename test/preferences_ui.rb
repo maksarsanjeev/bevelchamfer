@@ -1,0 +1,2 @@
+raise 'Only SketchUp 2024' unless Sketchup.version.to_i == 24
+$bc_prefs_dialog.execute_script("document.getElementById('angle').value=15;document.getElementById('language').value='en';document.getElementById('language').dispatchEvent(new Event('change'));sketchup.qa(JSON.stringify({height:innerHeight,scroll:document.documentElement.scrollHeight,heading:document.querySelector('h1').textContent}));")

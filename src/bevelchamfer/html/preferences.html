@@ -1,0 +1,10 @@
+<!doctype html><html lang="ru"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Настройки bevelchamfer</title><link rel="stylesheet" href="tools.css"><body><main>
+<h1>Сглаживание рёбер</h1><label for="angle">Порог угла, °</label><div class="row"><button id="minus" aria-label="Уменьшить угол">−</button><input id="angle" type="number" min="0" max="180" step="1" value="30"><button id="plus" aria-label="Увеличить угол">+</button></div>
+<label class="check"><input id="smooth" type="checkbox"> Сглаживать мягкие рёбра</label><label class="check"><input id="borders" type="checkbox"> Сглаживать границы скругления</label><label class="check"><input id="notifications" type="checkbox"> Сообщать результат обработки</label>
+<label for="language">Язык интерфейса</label><select id="language"><option value="ru">Русский</option><option value="en">English</option></select><p id="error" role="alert" hidden></p>
+</main><script src="i18n.js"></script><script>
+const $=id=>document.getElementById(id);window.app={state(s){$('angle').value=s.angle;for(const id of ['smooth','borders','notifications'])$(id).checked=s[id];$('language').value=s.language;setLanguage(s.language);},error(s){$('error').textContent=s;$('error').hidden=false;}};
+function send(){window.sketchup.change(JSON.stringify({angle:+$('angle').value,smooth:$('smooth').checked,borders:$('borders').checked,notifications:$('notifications').checked,language:$('language').value}));setLanguage($('language').value);$('error').hidden=true;}
+for(const id of ['angle','smooth','borders','notifications','language'])$(id).onchange=send;
+$('minus').onclick=()=>{$('angle').value=Math.max(0,+$('angle').value-1);send();};$('plus').onclick=()=>{$('angle').value=Math.min(180,+$('angle').value+1);send();};document.addEventListener('DOMContentLoaded',()=>window.sketchup.ready());
+</script></body></html>

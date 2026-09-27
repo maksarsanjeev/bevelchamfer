@@ -30,7 +30,12 @@ module BACommunity
         tooltip: 'Фаска и скругление рёбер',
         status:  'Выделите рёбра (или группу целиком): размер, число сегментов, 1 сегмент — прямая фаска',
         action:  -> { ChamferPanel.show }
-      }
+      },
+      {icon: 'interactive', title: 'Интерактивная фаска', tooltip: 'Фаска мышью', status: 'Ребро, грань или вершина; Ctrl — добавить; Ctrl+Shift — исключить', action: -> { Sketchup.active_model.select_tool(InteractiveTool.new) }},
+      {icon: 'live', title: 'Live скругление', tooltip: 'Редактируемый исходник и автоматическое скругление', status: 'Выделите группу или компонент', action: -> { LivePanel.show }},
+      {icon: 'soften', title: 'Сгладить рёбра', tooltip: 'Сгладить рёбра по углу', status: 'Выделенные рёбра и грани или все рёбра в текущем контексте', action: -> { MeshTools.auto_soften }},
+      {icon: 'clean', title: 'Очистить рёбра', tooltip: 'Удалить лишние рёбра', status: 'Объединить совместимые плоские грани', action: -> { MeshTools.clean_edges }},
+      {icon: 'settings', title: 'Настройки', tooltip: 'Настройки сглаживания', status: 'Угол, сглаживание границ, уведомления', action: -> { PreferencesPanel.show }}
     ].freeze
 
     # Пара путей [большая иконка, маленькая]. SVG понимает только
@@ -46,7 +51,10 @@ module BACommunity
     end
 
     def self.build_command(spec)
-      cmd = UI::Command.new(spec[:title]) { spec[:action].call }
+      cmd = UI::Command.new(spec[:title]) do
+        begin; spec[:action].call
+        rescue StandardError => e; UI.messagebox(e.message); end
+      end
 
       large_icon, small_icon = icon_paths(spec[:icon])
       # Иконку ставим только если файл на месте: иначе SketchUp ругается,
@@ -74,7 +82,7 @@ module BACommunity
 
     def self.create_menu
       menu = UI.menu('Extensions').add_submenu(MENU_NAME)
-      BUTTONS.each { |spec| menu.add_item(spec[:title]) { spec[:action].call } }
+      BUTTONS.each { |spec| menu.add_item(build_command(spec)) }
       menu
     end
 

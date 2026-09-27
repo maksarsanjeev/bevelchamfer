@@ -1,0 +1,22 @@
+<!doctype html><html lang="ru"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Live bevelchamfer</title>
+<link rel="stylesheet" href="tools.css"><body><main>
+<h1>Live скругление</h1>
+<label for="size">Размер, мм</label><div class="row"><button id="minus" aria-label="Уменьшить размер на один пиксель">−</button><input id="size" type="number" min="0.001" step="any"><button id="plus" aria-label="Увеличить размер на один пиксель">+</button></div>
+<label for="segments">Сегментов</label><div class="row"><button id="seg-minus" aria-label="Уменьшить число сегментов">−</button><input id="segments" type="number" min="1" max="24"><button id="seg-plus" aria-label="Увеличить число сегментов">+</button></div>
+<div class="row"><select id="mode" aria-label="Способ задания размера"><option value="offset">Отступ / катет</option><option value="radius">Радиус</option></select><button id="offset">Указать мышью</button></div>
+<label for="display">Отображение</label><select id="display"><option value="proxy">Исходник</option><option value="bevel">Скругление</option><option value="both">Исходник + скругление</option></select>
+<label for="opacity">Непрозрачность результата <output id="opacity-value">100%</output></label><input id="opacity" type="range" min="0" max="1" step="0.05">
+<label class="check"><input id="borders" type="checkbox"> Сглаживать границы скругления</label>
+<p id="error" role="alert" hidden></p>
+<button id="edit" class="wide">Редактировать исходник</button><div class="row bottom"><button id="remove">Снять Live</button><button id="commit" class="primary">Запечь</button></div>
+</main><script src="i18n.js"></script><script>
+const $=id=>document.getElementById(id);let loading=false;
+function send(){if(loading)return;window.sketchup.change(JSON.stringify({size:+$('size').value,segments:+$('segments').value,mode:$('mode').value,display:$('display').value,opacity:+$('opacity').value,borders:$('borders').checked}));$('error').hidden=true;}
+window.app={state(s){loading=true;for(const id of ['size','segments','mode','display','opacity'])$(id).value=s[id];$('borders').checked=s.borders;$('opacity-value').textContent=Math.round(s.opacity*100)+'%';setLanguage(s.language||'ru');loading=false;},error(s){$('error').textContent=s;$('error').hidden=false;}};
+for(const id of ['size','segments','mode','display','opacity','borders'])$(id).onchange=send;
+$('opacity').oninput=()=>{$('opacity-value').textContent=Math.round($('opacity').value*100)+'%';};
+$('minus').onclick=()=>window.sketchup.step(-1);$('plus').onclick=()=>window.sketchup.step(1);
+for(const [id,step] of [['seg-minus',-1],['seg-plus',1]])$(id).onclick=()=>{$('segments').value=Math.max(1,Math.min(24,+$('segments').value+step));send();};
+for(const id of ['offset','edit','commit','remove'])$(id).onclick=()=>window.sketchup[id]();
+document.addEventListener('DOMContentLoaded',()=>window.sketchup.ready());
+</script></body></html>

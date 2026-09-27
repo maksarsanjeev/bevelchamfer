@@ -187,7 +187,23 @@ module BACommunity
           cuts[[info.edge, vertex]] = pts
           pts
         end
-        patches << { center: center, arcs: arcs, convex: a.convex?, front: a.f1_material, back: a.f1_back_material, layer: a.f1_layer }
+        generalized = incident.map(&:convex?).uniq.length > 1
+        if generalized
+          arcs = incident.map do |info|
+            others = incident - [info]
+            corners = [info.f1, info.f2].map do |face|
+              neighbor = others.find { |other| [other.f1, other.f2].include?(face) }
+              raise Error, 'не удалось соединить грани угла' unless neighbor
+              offset_meet(face, info, neighbor, vertex)
+            end
+            profile = info.profile_at(vertex.position)
+            shifts = [corners[0] - profile.first, corners[1] - profile.last].map { |v| v.dot(info.dir) }
+            points = profile.each_with_index.map { |p, i| p.offset(info.dir, shifts[0] + (shifts[1]-shifts[0])*i.to_f/info.segments) }
+            cuts[[info.edge, vertex]] = points
+            points
+          end
+        end
+        patches << { center: center, arcs: arcs, generalized: generalized, convex: a.convex?, front: a.f1_material, back: a.f1_back_material, layer: a.f1_layer }
       end
 
       def self.axis_meet(vertex, a, b)
@@ -393,6 +409,8 @@ module BACommunity
           quads.concat(made)
         end
 
+        quads.select!(&:valid?)
+        quads.each { |face| face.set_attribute('BACommunity_BevelSurface', 'generated', true) }
         soften(quads, smooth && info.segments > 1)
         quads
       end
@@ -400,6 +418,7 @@ module BACommunity
       # Сферический треугольник в углу: строки идут от дуги PQ к вершине R,
       # обе боковые стороны — те же дуги, что и торцы полос, поэтому шва нет.
       def self.build_patch(entities, patch, smooth)
+        return build_transition_patch(entities, patch, smooth) if patch[:generalized]
         center = patch[:center]
         corners = triangle_corners(patch[:arcs])
         p, q, r = corners
@@ -430,8 +449,60 @@ module BACommunity
             end
           end
         end
+        made.select!(&:valid?)
+        made.each { |face| face.set_attribute('BACommunity_BevelSurface', 'generated', true) }
         soften_all(made, smooth && n > 1)
         made
+      end
+
+      # A triangular transfinite patch has exactly the three rail-cut curves
+      # as its boundary. Mixed convex/concave junctions have no common sphere.
+      def self.build_transition_patch(entities, patch, smooth)
+        a, b, c = triangle_corners(patch[:arcs])
+        n = patch[:arcs].first.length - 1
+        curve = lambda do |from, to|
+          arc = patch[:arcs].find { |x| [x.first, x.last].all? { |p| p.distance(from).to_f < WELD || p.distance(to).to_f < WELD } }
+          raise Error, 'граница переходного патча разорвана' unless arc
+          arc.first.distance(from).to_f < WELD ? arc : arc.reverse
+        end
+        ab, ac, bc = curve.call(a,b), curve.call(a,c), curve.call(b,c)
+        sample = lambda do |arc, t|
+          index = t*n; i = index.floor.clamp(0,n); j = [i+1,n].min
+          Geom.linear_combination(1-(index-i), arc[i], index-i, arc[j])
+        end
+        rows = (0..n).map do |i|
+          (0..(n-i)).map do |j|
+            u = (n-i-j).to_f/n; v = j.to_f/n; w = i.to_f/n
+            point = Geom::Point3d.new(a.x*u+b.x*v+c.x*w, a.y*u+b.y*v+c.y*w, a.z*u+b.z*v+c.z*w)
+            [[u,v,ab,a,b],[u,w,ac,a,c],[v,w,bc,b,c]].each do |x,y,arc,p,q|
+              next if x+y < 1.0e-10
+              t = y/(x+y); linear = Geom.linear_combination(1-t,p,t,q)
+              delta = sample.call(arc,t)-linear
+              point += Geom::Vector3d.new(delta.x*(x+y)**2,delta.y*(x+y)**2,delta.z*(x+y)**2)
+            end
+            point
+          end
+        end
+        made = []
+        (0...n).each do |i|
+          top, bottom = rows[i], rows[i+1]
+          (0...(top.length-1)).each do |j|
+            triangles = [[top[j],top[j+1],bottom[j]]]
+            triangles << [top[j+1],bottom[j+1],bottom[j]] if j < bottom.length-1
+            triangles.each do |points|
+              add_faces(entities, points).each do |face|
+                seam = face.edges.find { |e| e.faces.length == 2 }
+                if seam
+                  other = (seam.faces-[face]).first
+                  face.reverse! if seam.reversed_in?(face) == seam.reversed_in?(other)
+                end
+                face.material = patch[:front]; face.back_material = patch[:back]; face.layer = patch[:layer]
+                face.set_attribute('BACommunity_BevelSurface', 'generated', true); made << face
+              end
+            end
+          end
+        end
+        soften_all(made, smooth && n > 1); made
       end
 
       # Три угла патча — концы дуг, попарно совпадающие.
@@ -461,6 +532,7 @@ module BACommunity
       # Швы между сегментами дуги сглаживаем, у прямой фаски (1 сегмент) — нет.
       def self.soften(quads, on)
         return unless on
+        quads = quads.select(&:valid?)
         quads.each_cons(2) do |a, b|
           edge = (a.edges & b.edges).first
           next if edge.nil?
@@ -471,6 +543,7 @@ module BACommunity
 
       def self.soften_all(faces, on)
         return unless on
+        faces = faces.select(&:valid?)
         faces.flat_map(&:edges).uniq.each do |edge|
           next unless edge.faces.length == 2
           next unless faces.include?(edge.faces[0]) && faces.include?(edge.faces[1])
@@ -495,7 +568,7 @@ module BACommunity
             rescue ArgumentError
               nil
             end
-          end.compact
+          end.compact.select(&:valid?)
         end
       end
 

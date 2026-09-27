@@ -1,0 +1,8 @@
+<!-- Copyright 2026 B&A community. Apache License 2.0. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+<polygon points="12.000000,2.000000 20.200000,6.735000 21.300000,8.000000 21.300000,16.000000 20.200000,17.265000 12.000000,22.000000 3.800000,17.265000 2.700000,16.000000 2.700000,8.000000 3.800000,6.735000" fill="#347BBE" stroke="#343C43" stroke-width="0.75" stroke-linejoin="round"/>
+<polygon points="12.000000,3.800000 18.200000,7.340000 12.000000,10.880000 5.800000,7.340000" fill="#F0F3F6" stroke="#343C43" stroke-width="0.75" stroke-linejoin="round"/>
+<polygon points="4.600000,9.650000 10.300000,13.056000 10.300000,19.700000 4.600000,16.294000" fill="#C8D1D9" stroke="#343C43" stroke-width="0.75" stroke-linejoin="round"/>
+<polygon points="19.400000,9.650000 13.700000,13.056000 13.700000,19.700000 19.400000,16.294000" fill="#8997A3" stroke="#343C43" stroke-width="0.75" stroke-linejoin="round"/>
+<polygon points="12.000000,2.000000 20.200000,6.735000 21.300000,8.000000 21.300000,16.000000 20.200000,17.265000 12.000000,22.000000 3.800000,17.265000 2.700000,16.000000 2.700000,8.000000 3.800000,6.735000" fill="none" stroke="#343C43" stroke-width="1.12" stroke-linejoin="round"/>
+<circle cx="19.5" cy="19" r="5" fill="#347BBE" stroke="white" stroke-width=".5"/><path d="M19.5 15 V23 M15.5 19 H23.5 M16.5 16 L22.5 22 M16.5 22 L22.5 16" stroke="white" stroke-width="2"/><circle cx="19.5" cy="19" r="3" fill="white"/><circle cx="19.5" cy="19" r="1.4" fill="#347BBE"/></svg>

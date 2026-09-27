@@ -1,0 +1,9 @@
+<!-- Copyright 2026 B&A community. Apache License 2.0. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+<polyline points="3.0000,7.0000 12.0000,2.0000 21.0000,7.0000 21.0000,17.0000 12.0000,22.0000 3.0000,17.0000 3.0000,7.0000" fill="none" stroke="#3B3B38" stroke-width="1.25" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="3.0000,7.0000 12.0000,12.0000 21.0000,7.0000" fill="none" stroke="#3B3B38" stroke-width="1.25" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="12.0000,12.0000 12.0000,22.0000" fill="none" stroke="#3B3B38" stroke-width="1.25" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="3.0000,7.0000 12.0000,2.0000" fill="none" stroke="#22AD7D" stroke-width="2.8" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="3" cy="7" r="1.6" fill="#22AD7D" stroke="none" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="12" cy="2" r="1.6" fill="#22AD7D" stroke="none" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+</svg>

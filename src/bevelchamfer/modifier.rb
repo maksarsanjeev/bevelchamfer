@@ -45,7 +45,7 @@ module BACommunity
       def snapshot(object)
         mesh = entities(object)
         raise Chamfer::Error, 'Параметрический режим поддерживает только рёбра и грани без вложенных объектов.' unless mesh.all? { |e| e.is_a?(Sketchup::Face) || e.is_a?(Sketchup::Edge) }
-        raise Chamfer::Error, 'Для геометрии с атрибутами используйте обычную фаску.' if mesh.any? { |e| e.attribute_dictionaries && e.attribute_dictionaries.length > 0 }
+        raise Chamfer::Error, 'Для геометрии с атрибутами используйте обычную фаску.' if mesh.any? { |e| e.attribute_dictionaries&.any? { |d| d.name != 'BACommunity_BevelSurface' } }
         raise Chamfer::Error, 'Для дуг и кривых используйте обычную фаску: параметрический режим хранит полигональную сетку.' if mesh.grep(Sketchup::Edge).any?(&:curve)
         faces = mesh.grep(Sketchup::Face).map do |f|
           raise Chamfer::Error, 'Для текстур используйте обычную фаску: параметрический режим не сохраняет UV-развёртку.' if [f.material, f.back_material].compact.any?(&:texture)
@@ -53,7 +53,7 @@ module BACommunity
           {'loops' => loops.map { |l| l.vertices.map { |v| v.position.to_a } },
            'normal' => f.normal.to_a, 'front' => f.material&.name,
            'back' => f.back_material&.name, 'tag' => f.layer.name,
-           'hidden' => f.hidden?}
+           'hidden' => f.hidden?, 'generated' => f.get_attribute('BACommunity_BevelSurface', 'generated', false)}
         end
         edges = mesh.grep(Sketchup::Edge).map do |e|
           {'points' => [e.start.position.to_a, e.end.position.to_a],
@@ -96,6 +96,7 @@ module BACommunity
             normal: Geom::Vector3d.new(s['normal']), layer: model.layers[s['tag']] || model.layers[0],
             front: (s['front'] && model.materials[s['front']]), back: (s['back'] && model.materials[s['back']]))
           made.each { |f| f.hidden = s['hidden'] }
+          made.each { |f| f.set_attribute('BACommunity_BevelSurface', 'generated', true) } if s['generated']
         end
         existing = mesh.grep(Sketchup::Edge).to_h { |e| [edge_key(e), e] }
         source['edges'].each do |s|

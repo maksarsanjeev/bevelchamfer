@@ -131,6 +131,7 @@ module BACommunity
           scale: Geom::Vector3d.new(1, 0, 0).transform(transform).length.to_f,
           object: !selected_object.nil?
         )})")
+        @dialog&.execute_script("setLanguage(#{JSON.generate(defined?(MeshTools) ? MeshTools.settings['language'] : 'ru')})")
       end
 
       def self.preview_state(active)

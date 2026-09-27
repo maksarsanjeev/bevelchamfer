@@ -1,0 +1,7 @@
+<!-- Copyright 2026 B&A community. Apache License 2.0. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+<polygon points="3.0000,7.0000 12.0000,2.0000 21.0000,7.0000 13.7000,11.2000 10.3000,11.2000" fill="#EEF2F5" stroke="#3B3B38" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round"/>
+<polygon points="3.0000,7.0000 10.3000,11.2000 10.3000,20.0000 3.0000,16.0000" fill="#CBD2D8" stroke="#3B3B38" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round"/>
+<polygon points="21.0000,7.0000 13.7000,11.2000 13.7000,20.0000 21.0000,16.0000" fill="#8B959E" stroke="#3B3B38" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round"/>
+<polygon points="10.3000,11.2000 13.7000,11.2000 13.7000,20.0000 10.3000,20.0000" fill="#2B6CB0" stroke="#2B6CB0" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round"/>
+</svg>

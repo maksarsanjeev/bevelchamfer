@@ -25,10 +25,16 @@ module BACommunity
     require File.join(HERE, 'chamfer.rb')
     require File.join(HERE, 'modifier.rb')
     require File.join(HERE, 'chamfer_panel.rb')
+    require File.join(HERE, 'mesh_tools.rb')
+    require File.join(HERE, 'live_bevel.rb')
+    require File.join(HERE, 'interactive_tool.rb')
+    require File.join(HERE, 'live_panel.rb')
     require File.join(HERE, 'toolbar.rb')
 
+    LiveBevel.start
+
     unless @interface_created || file_loaded?(__FILE__)
-      create_menu
+      @menu = create_menu
       @toolbar = create_toolbar
 
       file_loaded(__FILE__)
