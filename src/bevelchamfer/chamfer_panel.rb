@@ -35,13 +35,13 @@ module BACommunity
 
         @dialog = UI::HtmlDialog.new(
           dialog_title:    'bevelchamfer — фаска и скругление',
-          preferences_key: 'BACommunity_BevelChamfer_Chamfer',
+          preferences_key: 'BACommunity_BevelChamfer_Compact',
           scrollable:      false,
           resizable:       true,
-          width:           560,
-          height:          750,
-          min_width:       520,
-          min_height:      730,
+          width:           400,
+          height:          250,
+          min_width:       340,
+          min_height:      240,
           style:           UI::HtmlDialog::STYLE_DIALOG
         )
         @dialog.set_file(HTML_FILE)
@@ -57,7 +57,7 @@ module BACommunity
         dialog.add_action_callback('close') { |_ctx| dialog.close }
         dialog.add_action_callback('refresh') { |_ctx| push }
         dialog.add_action_callback('bake') { |_ctx| run_bake }
-        dialog.add_action_callback('stop') { |_ctx| ChamferPreview.stop }
+        dialog.add_action_callback('stop') { |_ctx| ChamferPreview.stop; preview_state(false) }
         dialog.add_action_callback('preview') do |_ctx, size, segments, mode|
           run_preview(size.to_f, segments.to_i, mode.to_s.to_sym)
         end
@@ -133,6 +133,10 @@ module BACommunity
         )})")
       end
 
+      def self.preview_state(active)
+        @dialog&.execute_script("app.preview(#{active ? 'true' : 'false'})")
+      end
+
       def self.say(text, kind = 'info')
         @dialog&.execute_script("app.say(#{JSON.generate(text)}, #{JSON.generate(kind)})")
       end
@@ -174,6 +178,7 @@ module BACommunity
       def self.run_preview(size, segments, mode, quiet: false)
         edges = gather(size, segments)
         if edges.nil?
+          preview_state(false)
           ChamferPreview.stop
           return
         end
@@ -198,10 +203,13 @@ module BACommunity
             "#{notes_text(notes)}Enter — применить, Esc — убрать превью.")
       rescue StandardError => e
         ChamferPreview.stop
+        preview_state(false)
         say(e.message, 'warn')
       end
 
       def self.run_apply(size, segments, mode, parametric: false)
+        ChamferPreview.stop
+        preview_state(false)
         edges = gather(size, segments)
         return if edges.nil?
         ChamferPreview.stop
@@ -286,6 +294,7 @@ module BACommunity
 
       def deactivate(view)
         @active = false
+        ChamferPanel.preview_state(false)
         Sketchup.status_text = ''
         view.invalidate
       end
