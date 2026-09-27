@@ -34,7 +34,7 @@ module BACommunity
         report(e); model.select_tool(nil)
       end
       def eligible?(e)
-        e.is_a?(Sketchup::Edge) && e.valid? && e.faces.length == 2 && e.faces[0].normal.angle_between(e.faces[1].normal) > 1.0e-6
+        e.is_a?(Sketchup::Edge) && e.valid? && !e.soft? && !e.hidden? && e.faces.length == 2 && e.faces[0].normal.angle_between(e.faces[1].normal) > 1.0e-6
       end
       def probe(x, y, view)
         @input.pick(view, x, y)

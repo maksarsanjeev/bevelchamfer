@@ -5,7 +5,7 @@
 <label for="segments">Сегментов</label><div class="row"><button id="seg-minus" aria-label="Уменьшить число сегментов">−</button><input id="segments" type="number" min="1" max="24"><button id="seg-plus" aria-label="Увеличить число сегментов">+</button></div>
 <div class="row"><select id="mode" aria-label="Способ задания размера"><option value="offset">Отступ / катет</option><option value="radius">Радиус</option></select><button id="offset">Указать мышью</button></div>
 <label for="display">Отображение</label><select id="display"><option value="proxy">Исходник</option><option value="bevel">Скругление</option><option value="both">Исходник + скругление</option></select>
-<label for="opacity">Непрозрачность результата <output id="opacity-value">100%</output></label><input id="opacity" type="range" min="0" max="1" step="0.05">
+<label for="opacity">Непрозрачность результата <output id="opacity-value">100%</output></label><input id="opacity" type="range" min="0" max="1" step="0.01">
 <label class="check"><input id="borders" type="checkbox"> Сглаживать границы скругления</label>
 <p id="error" role="alert" hidden></p>
 <button id="edit" class="wide">Редактировать исходник</button><div class="row bottom"><button id="remove">Снять Live</button><button id="commit" class="primary">Запечь</button></div>

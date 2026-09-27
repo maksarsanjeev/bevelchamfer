@@ -30,15 +30,18 @@ module BACommunity
         edge.faces.length == 2 && edge.faces.count { |f| f.get_attribute('BACommunity_BevelSurface', 'generated', false) } == 1
       end
       def soften(edges, values = settings)
+        count = 0
         edges.each do |e|
           next unless e.valid?
           on = e.faces.length == 2 && values['angle'].to_f > 0 && e.faces[0].normal.angle_between(e.faces[1].normal) <= values['angle'].to_f.degrees + 1.0e-8
           e.soft = on
           e.smooth = on && values['smooth'] && (!border?(e) || values['borders'])
+          count += 1 if on
         end
+        count
       end
       def auto_soften
-        operate('Сгладить рёбра') { |edges| soften(edges); edges.length }
+        operate('Сгладить рёбра') { |edges| soften(edges) }
       end
       def compatible?(a, b)
         a.material == b.material && a.back_material == b.back_material && a.layer == b.layer && a.hidden? == b.hidden? &&
@@ -67,8 +70,10 @@ module BACommunity
           next unless va.parallel?(vb) && va.dot(vb) < 0
           # SketchUp coalesces these via a temporary dividing edge.
           owner = a.parent.entities
+          before = owner.grep(Sketchup::Edge).length
           temp = owner.add_line(v.position, v.position.offset(Geom::Vector3d.new(0.123, 0.456, 0.789), 0.1))
           temp.erase! if temp&.valid?
+          count += [before - owner.grep(Sketchup::Edge).length, 0].max
         end
         count
       end
@@ -81,11 +86,25 @@ module BACommunity
         model.start_operation("bevelchamfer — #{title}", true)
         begin
           count = yield(edges); model.commit_operation
-          Sketchup.set_status_text("#{title}: #{count}") if settings['notifications']
-          count
         rescue StandardError
           model.abort_operation; raise
         end
+        notify(title, edges.length, count) if settings['notifications']
+        count
+      end
+      def notify(title, selected, count)
+        english = settings['language'] == 'en'
+        clean = title == 'Очистить рёбра'
+        heading = english ? (clean ? 'Clean Edges' : 'Auto Soften Edges') : title
+        selected_label = english ? 'Edges Selected' : 'Рёбер выбрано'
+        result_label = english ? (clean ? 'Edges Cleaned' : 'Edges Softened') : (clean ? 'Рёбер удалено' : 'Рёбер смягчено')
+        message = "#{heading}\n#{selected_label}: #{selected}\n#{result_label}: #{count}"
+        Sketchup.set_status_text(message.tr("\n", ' '))
+        extension = Sketchup.extensions['bevelchamfer']
+        return unless extension
+        icon = File.join(__dir__, 'icons', clean ? 'clean_24.png' : 'soften_24.png')
+        @notification = UI::Notification.new(extension, message, icon)
+        @notification.show
       end
     end
   end

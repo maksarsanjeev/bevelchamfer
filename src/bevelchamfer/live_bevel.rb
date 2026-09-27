@@ -14,7 +14,7 @@ module BACommunity
         [children.find { |g| g.get_attribute(KEY, 'role') == 'proxy' }, children.find { |g| g.get_attribute(KEY, 'role') == 'result' }]
       end
       def eligible(mesh)
-        mesh.grep(Sketchup::Edge).select { |e| e.faces.length == 2 && !e.soft? && e.faces[0].normal.angle_between(e.faces[1].normal) > 1.0e-6 }
+        mesh.grep(Sketchup::Edge).select { |e| e.valid? && e.faces.length == 2 && !e.soft? && !e.hidden? && e.faces[0].normal.angle_between(e.faces[1].normal) > 1.0e-6 }
       end
       def create(object, size = 20.mm, segments = 8)
         raise Chamfer::Error, 'Live работает с одной группой или компонентом.' unless object.is_a?(Sketchup::Group) || object.is_a?(Sketchup::ComponentInstance)

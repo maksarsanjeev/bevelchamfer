@@ -1,7 +1,7 @@
 # bevelchamfer
 
 Фаска и скругление рёбер для **SketchUp 2024 / 2025 / 2026**.
-Версия **0.2.0**, рабочая сборка для дальнейшей доработки. Исполнение проверено только в **SketchUp 2024 Pro 24.0.484, Ruby 3.2.2**. Проверки в 2025 и 2026 пока не проводились.
+Версия **0.2.1**, рабочая сборка для дальнейшей доработки. Исполнение проверено только в **SketchUp 2024 Pro 24.0.484, Ruby 3.2.2**. Проверки в 2025 и 2026 пока не проводились.
 
 Авторы: [maksarsanjeev](https://github.com/maksarsanjeev), [Royalb21](https://github.com/Royalb21). Правообладатель — B&A community. [Apache License 2.0](LICENSE).
 
@@ -33,7 +33,7 @@
 powershell -ExecutionPolicy Bypass -File tools/build_rbz.ps1
 ```
 
-Результат: `build/bevelchamfer0.2.0_test.rbz`. Установить через **Extension Manager → Install Extension**. Для SketchUp 2025/2026 используйте локальный RBZ; скрипт разработки намеренно устанавливает только в 2024:
+Результат: `build/bevelchamfer0.2.1_test.rbz`. Установить через **Extension Manager → Install Extension**. Для SketchUp 2025/2026 используйте локальный RBZ; скрипт разработки намеренно устанавливает только в 2024:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File tools/dev_install.ps1

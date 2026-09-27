@@ -2,13 +2,15 @@
 # Every assertion and UI callback executes in real SketchUp 2024.
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
+New-Item -ItemType Directory -Force (Join-Path $root 'build') | Out-Null
 Start-Transcript -Path (Join-Path $root 'build/su2024-checks.log') -Force | Out-Null
 $files = @(
  'regression', 'integration', 'holes', 'video_features', 'video_safety', 'interactive_mouse',
  'live_observer', 'live_observer_check', 'live_observer_undo', 'live_observer_redo',
  'live_edit_context', 'live_edit_context_pushpull', 'live_edit_context_check',
  'video_ui', 'video_ui_check', 'video_ui_finish', 'video_ui_cleanup',
- 'live_mouse', 'preferences_ui', 'preferences_ui_check'
+ 'live_mouse', 'preferences_ui', 'preferences_ui_check',
+ 'video_recheck', 'video_recheck_ui', 'video_recheck_finish'
 )
 try {
     foreach ($file in $files) {
