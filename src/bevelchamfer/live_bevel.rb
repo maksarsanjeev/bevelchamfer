@@ -155,8 +155,24 @@ module BACommunity
           data(e) ? block.call(e, world) : walk(Modifier.entities(e), world, &block)
         end
       end
+      def live_present?(model)
+        walk(model.entities) { |_object, _world| return true }
+        false
+      end
+      def changed_live_objects(model)
+        changed = []
+        walk(model.entities) do |object, _world|
+          proxy, result = parts(object)
+          next unless proxy && result
+          changed << object if Modifier.signature(proxy) != data(object)['source_signature']
+        end
+        changed
+      end
       def sync(model = Sketchup.active_model)
-        return if @busy || model != Sketchup.active_model
+        return if @busy || model != Sketchup.active_model || !live_present?(model)
+        # Merely opening/undoing an ordinary group must not switch edit context:
+        # active_path= creates transparent transactions and can eat Undo steps.
+        return if changed_live_objects(model).empty?
         path = model.active_path
         @busy = true; model.active_path = nil if path
         @busy = false
@@ -191,7 +207,7 @@ module BACommunity
         end
       end
       def schedule(model)
-        return if @busy || @pending
+        return if @busy || @pending || model != Sketchup.active_model || !live_present?(model)
         @pending = true
         UI.start_timer(0.05, false) do
           @pending = false; sync(model)
@@ -218,8 +234,8 @@ module BACommunity
       end
       class AppObserver < Sketchup::AppObserver
         def expectsStartupModelNotifications; true; end
-        def onNewModel(model); LiveBevel.attach(model); end
-        def onOpenModel(model); LiveBevel.attach(model); end
+        def onNewModel(model); LiveBevel.attach(model) if LiveBevel.live_present?(model); end
+        def onOpenModel(model); LiveBevel.attach(model) if LiveBevel.live_present?(model); end
       end
       class WireOverlay < Sketchup::Overlay
         def initialize; super('BACommunity.BevelChamfer.LiveWire', 'bevelchamfer — исходник'); end
@@ -240,7 +256,8 @@ module BACommunity
         overlay = WireOverlay.new; model.overlays.add(overlay); overlay.enabled = true
       end
       def start
-        attach(Sketchup.active_model)
+        model = Sketchup.active_model
+        attach(model) if live_present?(model)
         @app_observer ||= AppObserver.new
         Sketchup.add_observer(@app_observer) unless @app_attached
         @app_attached = true

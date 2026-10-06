@@ -6,6 +6,8 @@ New-Item -ItemType Directory -Force (Join-Path $root 'build') | Out-Null
 Start-Transcript -Path (Join-Path $root 'build/su2024-checks.log') -Force | Out-Null
 $files = @(
  'regression', 'integration', 'holes', 'video_features', 'video_safety', 'interactive_mouse',
+ 'undo_plain_group_setup', 'undo_plain_group_step', 'undo_plain_group_step', 'undo_plain_group_step', 'undo_plain_group_finish',
+ 'undo_with_live_setup', 'undo_plain_group_step', 'undo_plain_group_step', 'undo_plain_group_step', 'undo_with_live_finish',
  'live_observer', 'live_observer_check', 'live_observer_undo', 'live_observer_redo',
  'live_edit_context', 'live_edit_context_pushpull', 'live_edit_context_check',
  'video_ui', 'video_ui_check', 'video_ui_finish', 'video_ui_cleanup',

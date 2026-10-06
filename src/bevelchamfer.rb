@@ -23,7 +23,7 @@ module BACommunity
   module BevelChamfer
 
     EXTENSION_NAME = 'bevelchamfer'.freeze
-    VERSION        = '0.3.0'.freeze
+    VERSION        = '0.3.1'.freeze
 
     loader = SketchupExtension.new(EXTENSION_NAME, File.join('bevelchamfer', 'main.rb'))
     loader.copyright   = 'Copyright 2026 B&A community, Apache License 2.0'
